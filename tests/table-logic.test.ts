@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { getUiMessages, resolveUiLocale } from "../client/i18n.ts";
 import {
   compareCellValues,
   nextSortDirection,
@@ -118,4 +119,21 @@ test("Markdown 与 TSV 表格序列化（含换行清理与重复反斜杠管道
       "api-b\t110.0 Mbps\t备线路 | 双栈",
     ].join("\n"),
   );
+});
+
+test("中英双语 locale 解析与文案字典完整性", () => {
+  assert.equal(resolveUiLocale("zh-CN"), "zh-CN");
+  assert.equal(resolveUiLocale("zh-Hans"), "zh-CN");
+  assert.equal(resolveUiLocale("zh-TW"), "zh-CN");
+  assert.equal(resolveUiLocale("en"), "en");
+  assert.equal(resolveUiLocale("en-US"), "en");
+  assert.equal(resolveUiLocale(""), "en");
+  assert.equal(resolveUiLocale(undefined), "en");
+
+  const zh = getUiMessages("zh-CN");
+  const en = getUiMessages("en-US");
+  assert.equal(zh.copyMd, "复制 MD");
+  assert.equal(en.copyMd, "Copy MD");
+  assert.equal(zh.winTitleNormal(6, 3), "⠿ 表格独立窗（6 行 × 3 列）");
+  assert.equal(en.winTitleNormal(6, 3), "⠿ Table window (6 rows × 3 cols)");
 });

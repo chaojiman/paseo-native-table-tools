@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { getUiMessages, type UiMessages } from "./i18n";
 import {
   compareCellValues,
   nextSortDirection,
@@ -9,6 +10,11 @@ import {
   type SortDirection,
   type TableData,
 } from "./table-logic";
+
+export interface LocaleSourceLike {
+  readonly locale: string;
+  subscribe?: (listener: () => void) => () => void;
+}
 
 // 本插件不开启 DOM lib，在此仅声明 client/web.ts 实际用到的最小 DOM 接口。
 interface DomRectLike {
@@ -72,6 +78,7 @@ interface SelectionLike {
 }
 
 interface DocumentLike {
+  documentElement?: ElementLike | null;
   head: ElementLike | null;
   body: ElementLike | null;
   createElement(tag: string): ElementLike;
@@ -99,6 +106,7 @@ interface WindowLike {
 }
 
 interface NavigatorLike {
+  language?: string;
   clipboard?: {
     writeText(text: string): Promise<void>;
   };
@@ -556,7 +564,7 @@ function ensureOriginalOrderMarks(rows: ElementLike[]): void {
   }
 }
 
-function enhanceTable(table: ElementLike): void {
+function enhanceTable(table: ElementLike, headerHint: string): void {
   if (!isMarkdownTable(table)) return;
   table.setAttribute("data-ntt-enhanced", "true");
   const wrap = findDedicatedTableWrapper(table);
@@ -567,11 +575,9 @@ function enhanceTable(table: ElementLike): void {
   headers.forEach((th, idx) => {
     th.setAttribute("data-ntt-sortable", "true");
     th.setAttribute("data-ntt-col-idx", String(idx));
-    if (!th.getAttribute("title")) {
-      th.setAttribute(
-        "title",
-        "单击排序（升序 / 降序 / 还原）｜拖动右边缘调列宽｜Alt+单击复制",
-      );
+    if (!th.getAttribute("title") || th.getAttribute("data-ntt-auto-title") === "true") {
+      th.setAttribute("title", headerHint);
+      th.setAttribute("data-ntt-auto-title", "true");
     }
   });
   const { rows } = getBodyContainerAndRows(table);
@@ -743,7 +749,7 @@ function isNearRightEdge(el: ElementLike, clientX: number | undefined): boolean 
   return rect.width >= 20 && rect.right - clientX >= -2 && rect.right - clientX <= RESIZE_EDGE_PX;
 }
 
-function buildHtmlTable(doc: DocumentLike, data: TableData): ElementLike {
+function buildHtmlTable(doc: DocumentLike, data: TableData, headerHint: string): ElementLike {
   const table = doc.createElement("table");
   const thead = doc.createElement("thead");
   const headTr = doc.createElement("tr");
@@ -766,7 +772,7 @@ function buildHtmlTable(doc: DocumentLike, data: TableData): ElementLike {
     tbody.appendChild(tr);
   }
   table.appendChild(tbody);
-  enhanceTable(table);
+  enhanceTable(table, headerHint);
   return table;
 }
 
@@ -785,8 +791,8 @@ interface ActiveWinDrag {
   startTop: number;
 }
 
-/** 在桌面/Web 端挂载原生表格增强与用户长气泡防溢出；移动端为安全 no-op */
-export function mountNativeTableTools(): () => void {
+/** 在桌面/Web 端挂载原生表格增强与用户长气泡防溢出（内置中英双语自适应）；移动端为安全 no-op */
+export function mountNativeTableTools(i18nSource?: LocaleSourceLike): () => void {
   if (Platform.OS !== "web" || !document || !window) {
     return () => {};
   }
@@ -798,6 +804,11 @@ export function mountNativeTableTools(): () => void {
   if (!head || !body) {
     return () => {};
   }
+
+  const getMsg = (): UiMessages =>
+    getUiMessages(
+      i18nSource?.locale || doc.documentElement?.getAttribute("lang") || navigator?.language,
+    );
 
   const syncHostThemeAttr = () => {
     body.setAttribute("data-ntt-host-theme", detectTheme());
@@ -820,37 +831,29 @@ export function mountNativeTableTools(): () => void {
 
   const btnCopyMd = doc.createElement("button");
   btnCopyMd.setAttribute("type", "button");
-  btnCopyMd.textContent = "复制 MD";
 
   const btnCopyTsv = doc.createElement("button");
   btnCopyTsv.setAttribute("type", "button");
-  btnCopyTsv.textContent = "复制表格";
 
   const btnPopupWin = doc.createElement("button");
   btnPopupWin.setAttribute("type", "button");
-  btnPopupWin.textContent = "弹窗查看";
 
   const btnTransposeWin = doc.createElement("button");
   btnTransposeWin.setAttribute("type", "button");
-  btnTransposeWin.textContent = "转置查看";
 
   const btnToggleExpand = doc.createElement("button");
   btnToggleExpand.setAttribute("type", "button");
-  btnToggleExpand.textContent = "宽屏展开";
 
   const btnToggleHeight = doc.createElement("button");
   btnToggleHeight.setAttribute("type", "button");
-  btnToggleHeight.textContent = "展开全高";
   btnToggleHeight.style.display = "none";
 
   const btnResetWidth = doc.createElement("button");
   btnResetWidth.setAttribute("type", "button");
-  btnResetWidth.textContent = "重置列宽";
   btnResetWidth.style.display = "none";
 
   const btnResetSort = doc.createElement("button");
   btnResetSort.setAttribute("type", "button");
-  btnResetSort.textContent = "重置排序";
   btnResetSort.style.display = "none";
 
   toolbar.appendChild(btnCopyMd);
@@ -870,34 +873,27 @@ export function mountNativeTableTools(): () => void {
 
   const winHeader = doc.createElement("div");
   winHeader.setAttribute("class", "ntt-win-header");
-  winHeader.setAttribute("title", "按住此处拖动窗口位置｜拖动窗口右下角调整大小");
 
   const winTitle = doc.createElement("div");
   winTitle.setAttribute("class", "ntt-win-title");
-  winTitle.textContent = "转置对比悬浮窗";
 
   const winActions = doc.createElement("div");
   winActions.setAttribute("class", "ntt-win-actions");
 
   const btnWinFlip = doc.createElement("button");
   btnWinFlip.setAttribute("type", "button");
-  btnWinFlip.textContent = "切回原方向";
 
   const btnWinCopyMd = doc.createElement("button");
   btnWinCopyMd.setAttribute("type", "button");
-  btnWinCopyMd.textContent = "复制 MD";
 
   const btnWinCopyTsv = doc.createElement("button");
   btnWinCopyTsv.setAttribute("type", "button");
-  btnWinCopyTsv.textContent = "复制表格";
 
   const btnWinResetPos = doc.createElement("button");
   btnWinResetPos.setAttribute("type", "button");
-  btnWinResetPos.textContent = "居中复位";
 
   const btnWinClose = doc.createElement("button");
   btnWinClose.setAttribute("type", "button");
-  btnWinClose.textContent = "× 关闭";
 
   winActions.appendChild(btnWinFlip);
   winActions.appendChild(btnWinCopyMd);
@@ -980,18 +976,30 @@ export function mountNativeTableTools(): () => void {
     hasCustomWinGeometry = false;
   };
 
+  const updateFloatWinTexts = () => {
+    const msg = getMsg();
+    if (!winSourceData) {
+      winTitle.textContent = msg.winDefaultTitle;
+      btnWinFlip.textContent = msg.winFlipToOriginal;
+      return;
+    }
+    const viewData = winTransposed ? transposeTableData(winSourceData) : winSourceData;
+    winTitle.textContent = winTransposed
+      ? msg.winTitleTransposed(viewData.rows.length, Math.max(0, viewData.headers.length - 1))
+      : msg.winTitleNormal(viewData.rows.length, viewData.headers.length);
+    btnWinFlip.textContent = winTransposed ? msg.winFlipToOriginal : msg.winFlipToTransposed;
+  };
+
   const renderFloatWinTable = () => {
     if (!winSourceData) return;
     if (winTableEl) {
       winTableEl.remove();
       winTableEl = null;
     }
+    const msg = getMsg();
     const viewData = winTransposed ? transposeTableData(winSourceData) : winSourceData;
-    winTitle.textContent = winTransposed
-      ? `⠿ 转置对比窗（${viewData.rows.length} 维度 × ${Math.max(0, viewData.headers.length - 1)} 对象）`
-      : `⠿ 表格独立窗（${viewData.rows.length} 行 × ${viewData.headers.length} 列）`;
-    btnWinFlip.textContent = winTransposed ? "切回原方向" : "行列转置";
-    winTableEl = buildHtmlTable(doc, viewData);
+    updateFloatWinTexts();
+    winTableEl = buildHtmlTable(doc, viewData, msg.headerHint);
     winBody.appendChild(winTableEl);
   };
 
@@ -1020,6 +1028,27 @@ export function mountNativeTableTools(): () => void {
     winSourceData = null;
   };
 
+  const syncLanguageUi = () => {
+    const msg = getMsg();
+    btnCopyMd.textContent = msg.copyMd;
+    btnCopyTsv.textContent = msg.copyTable;
+    btnPopupWin.textContent = msg.popupView;
+    btnTransposeWin.textContent = msg.transposeView;
+    btnResetWidth.textContent = msg.resetWidth;
+    btnResetSort.textContent = msg.resetSort;
+
+    winHeader.setAttribute("title", msg.winDragHint);
+    btnWinCopyMd.textContent = msg.copyMd;
+    btnWinCopyTsv.textContent = msg.copyTable;
+    btnWinResetPos.textContent = msg.winResetPos;
+    btnWinClose.textContent = msg.winClose;
+    updateFloatWinTexts();
+
+    for (const th of toArray(doc.querySelectorAll('th[data-ntt-auto-title="true"]'))) {
+      th.setAttribute("title", msg.headerHint);
+    }
+  };
+
   const positionToolbar = (table: ElementLike) => {
     if (table.closest(`#${FLOAT_WIN_ID}`)) {
       toolbar.style.display = "none";
@@ -1031,6 +1060,7 @@ export function mountNativeTableTools(): () => void {
       return;
     }
 
+    const msg = getMsg();
     const theme = detectTheme();
     syncHostThemeAttr();
 
@@ -1044,9 +1074,15 @@ export function mountNativeTableTools(): () => void {
     );
 
     toolbar.setAttribute("data-ntt-theme", theme);
-    btnToggleExpand.textContent = isExpanded ? "恢复紧凑" : "宽屏展开";
+    btnCopyMd.textContent = msg.copyMd;
+    btnCopyTsv.textContent = msg.copyTable;
+    btnPopupWin.textContent = msg.popupView;
+    btnTransposeWin.textContent = msg.transposeView;
+    btnResetWidth.textContent = msg.resetWidth;
+    btnResetSort.textContent = msg.resetSort;
+    btnToggleExpand.textContent = isExpanded ? msg.compactWidth : msg.expandWidth;
     btnToggleHeight.style.display = isHeightCapped ? "inline-block" : "none";
-    btnToggleHeight.textContent = isFullHeight ? "限制高度" : "展开全高";
+    btnToggleHeight.textContent = isFullHeight ? msg.limitHeight : msg.expandHeight;
     btnResetWidth.style.display = isResized ? "inline-block" : "none";
     btnResetSort.style.display = isSorted ? "inline-block" : "none";
     toolbar.style.display = "flex";
@@ -1077,9 +1113,10 @@ export function mountNativeTableTools(): () => void {
 
   const scanAllTables = () => {
     syncHostThemeAttr();
+    const headerHint = getMsg().headerHint;
     const tables = toArray(doc.querySelectorAll("table"));
     for (const table of tables) {
-      enhanceTable(table);
+      enhanceTable(table, headerHint);
     }
   };
 
@@ -1094,19 +1131,21 @@ export function mountNativeTableTools(): () => void {
   // 工具条按钮事件
   const handleCopyMd = () => {
     if (!activeTable) return;
+    const msg = getMsg();
     const { headers, rows } = extractTableData(activeTable);
     const md = tableDataToMarkdown(headers, rows);
     void copyText(md).then((ok) => {
-      showToast(ok ? `已复制 Markdown 表格（${rows.length} 行）` : "复制失败");
+      showToast(ok ? msg.toastCopiedMd(rows.length) : msg.toastCopyFailed);
     });
   };
 
   const handleCopyTsv = () => {
     if (!activeTable) return;
+    const msg = getMsg();
     const { headers, rows } = extractTableData(activeTable);
     const tsv = tableDataToTsv(headers, rows);
     void copyText(tsv).then((ok) => {
-      showToast(ok ? "已复制表格（可直接粘贴到 Excel / 飞书）" : "复制失败");
+      showToast(ok ? msg.toastCopiedTsv : msg.toastCopyFailed);
     });
   };
 
@@ -1122,23 +1161,25 @@ export function mountNativeTableTools(): () => void {
 
   const handleToggleExpand = () => {
     if (!activeTable) return;
+    const msg = getMsg();
     const expanded = toggleExpandedWidth(activeTable);
     positionToolbar(activeTable);
-    showToast(expanded ? "已宽屏展开（支持横向滑动）" : "已恢复默认表格宽度");
+    showToast(expanded ? msg.toastExpandedWidth : msg.toastRestoredWidth);
   };
 
   const handleToggleHeight = () => {
     if (!activeTable) return;
+    const msg = getMsg();
     const full = toggleTableFullHeight(activeTable);
     positionToolbar(activeTable);
-    showToast(full ? "已展开表格全部高度" : "已恢复最大高度限制（表头吸顶）");
+    showToast(full ? msg.toastExpandedHeight : msg.toastLimitedHeight);
   };
 
   const handleResetWidth = () => {
     if (!activeTable) return;
     if (resetTableWidths(activeTable)) {
       positionToolbar(activeTable);
-      showToast("已重置列宽");
+      showToast(getMsg().toastResetWidth);
     }
   };
 
@@ -1146,7 +1187,7 @@ export function mountNativeTableTools(): () => void {
     if (!activeTable) return;
     if (resetTableSort(activeTable)) {
       positionToolbar(activeTable);
-      showToast("已恢复表格原始顺序");
+      showToast(getMsg().toastResetSort);
     }
   };
 
@@ -1175,23 +1216,25 @@ export function mountNativeTableTools(): () => void {
 
   const handleWinCopyMd = () => {
     if (!winTableEl) return;
+    const msg = getMsg();
     const { headers, rows } = extractTableData(winTableEl);
     void copyText(tableDataToMarkdown(headers, rows)).then((ok) => {
-      showToast(ok ? "已复制悬浮窗当前视图 Markdown" : "复制失败");
+      showToast(ok ? msg.toastWinCopiedMd : msg.toastCopyFailed);
     });
   };
 
   const handleWinCopyTsv = () => {
     if (!winTableEl) return;
+    const msg = getMsg();
     const { headers, rows } = extractTableData(winTableEl);
     void copyText(tableDataToTsv(headers, rows)).then((ok) => {
-      showToast(ok ? "已复制悬浮窗当前视图表格（Excel / 飞书）" : "复制失败");
+      showToast(ok ? msg.toastWinCopiedTsv : msg.toastCopyFailed);
     });
   };
 
   const handleWinResetPos = () => {
     resetFloatWinGeometry();
-    showToast("已恢复悬浮窗默认位置与尺寸");
+    showToast(getMsg().toastWinResetPos);
   };
 
   const handleKeyDown = (event: EventLike) => {
@@ -1376,7 +1419,7 @@ export function mountNativeTableTools(): () => void {
       event.preventDefault();
       event.stopPropagation();
       void copyText(text).then((ok) => {
-        if (ok) showToast(`已复制：${text}`);
+        if (ok) showToast(getMsg().toastCopiedCell(text));
       });
       return;
     }
@@ -1399,9 +1442,11 @@ export function mountNativeTableTools(): () => void {
       activeTable = table;
       positionToolbar(table);
     }
+    const msg = getMsg();
     const label = normalizeCellText(th.textContent ?? "");
-    const dirText = direction === "asc" ? "升序 ▲" : direction === "desc" ? "降序 ▼" : "已还原原序";
-    showToast(`${label}：${dirText}`);
+    const dirText =
+      direction === "asc" ? msg.sortAsc : direction === "desc" ? msg.sortDesc : msg.sortReset;
+    showToast(msg.toastSortedColumn(label, dirText));
   };
 
   const handleDblClick = (event: EventLike) => {
@@ -1416,7 +1461,7 @@ export function mountNativeTableTools(): () => void {
         if (!table.closest(`#${FLOAT_WIN_ID}`)) {
           positionToolbar(table);
         }
-        showToast("已重置列宽");
+        showToast(getMsg().toastResetWidth);
       }
       return;
     }
@@ -1426,7 +1471,7 @@ export function mountNativeTableTools(): () => void {
     const text = normalizeCellText(td.textContent ?? "");
     if (!text) return;
     void copyText(text).then((ok) => {
-      if (ok) showToast(`已复制：${text}`);
+      if (ok) showToast(getMsg().toastCopiedCell(text));
     });
   };
 
@@ -1436,6 +1481,14 @@ export function mountNativeTableTools(): () => void {
     }
     clampWinIntoViewport();
   };
+
+  syncLanguageUi();
+  const unsubscribeI18n = i18nSource?.subscribe?.(() => {
+    syncLanguageUi();
+    if (activeTable && toolbar.style.display !== "none") {
+      positionToolbar(activeTable);
+    }
+  });
 
   doc.addEventListener("mouseover", handleMouseOver, true);
   doc.addEventListener("mousemove", handleMouseMove, true);
@@ -1458,6 +1511,7 @@ export function mountNativeTableTools(): () => void {
   }
 
   return () => {
+    unsubscribeI18n?.();
     observer?.disconnect();
     if (hideTimer !== null) win.clearTimeout(hideTimer);
     if (toastTimer !== null) win.clearTimeout(toastTimer);
@@ -1508,6 +1562,10 @@ export function mountNativeTableTools(): () => void {
       table.removeAttribute("data-ntt-enhanced");
       table.removeAttribute("data-ntt-sorted");
       for (const th of toArray(table.querySelectorAll("th[data-ntt-sortable]"))) {
+        if (th.getAttribute("data-ntt-auto-title") === "true") {
+          th.removeAttribute("title");
+          th.removeAttribute("data-ntt-auto-title");
+        }
         th.removeAttribute("data-ntt-sortable");
         th.removeAttribute("data-ntt-col-idx");
         th.removeAttribute("data-ntt-sort");

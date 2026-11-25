@@ -1,34 +1,45 @@
 # Paseo Native Table Tools
 
-为 [Paseo](https://paseo.sh) 桌面端与 Web 端原生 Markdown 表格提供零侵入增强，**不接管聊天回复渲染**，100% 保留 Paseo 原生侧边栏打开文件链接与语义化选区复制，并修复用户长消息气泡向左溢出的问题。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-## 功能特性
+Zero-intrusion enhancements for native Markdown tables in [Paseo](https://paseo.sh) Desktop and Web. **Does not replace assistant reply rendering**, preserving 100% of Paseo's built-in side-by-side workspace file links and native text selection, while fixing leftward overflow on long user message bubbles.
 
-- **一键复制整表**：悬停任意 Markdown 表格，右上角悬浮工具条提供 `复制 MD`（合法 GFM 源码）与 `复制表格`（TSV，直接粘贴进 Excel / WPS / 飞书自动分列）。
-- **可拖拽、可缩放独立弹窗查看 & 转置查看**：悬停表格点击 `弹窗查看`（保持原方向）或 `转置查看`（自动行列互换）打开无遮罩悬浮窗，不挡底部对话滚动与复制；按住顶部标题栏任意拖动位置，拖动右下角自由调整窗口大小，支持窗内排序、拉宽列、一键互切方向与 `居中复位`。
-- **智能防超高 + 吸顶表头**：
-  - **防假高（窄列折行）**：表头默认 `white-space: nowrap` 自动撑出合理可读列宽，消除列过窄导致的“细长面条表”。
-  - **限真高（多行长表）**：长表自动限制最大高度 `min(62vh, 520px)` 并在内部滚动，表头 `sticky` 吸顶固定；当超过最大高度时工具条自动提供 `展开全高` / `限制高度` 一键切换。
-- **表头智能三态排序**：单击任意表头按 `升序 ▲ → 降序 ▼ → 恢复原序` 循环；自动识别并换算同维度单位（`ms`/`s`、`Mbps`/`Gbps`、`KB`/`MB`/`GB`、区间值、百分比），占位符始终沉底。
-- **手动拖拽拉宽列 & 宽屏展开**：拖动表头右边缘自由调宽，双击右边缘或点 `重置列宽` 恢复；点 `宽屏展开` / `恢复紧凑` 一键切换整表横向舒展模式。
-- **一键复制单元格**：双击任意数据单元格，或 `Alt + 单击` 任意单元格即刻复制纯文本。
-- **用户长消息防左溢出**：同时覆盖 Paseo 原生与 Better Paseo 插件提问气泡，超长文本/URL 自动折行不向左侧溢出。
+![Native table tools preview](assets/screenshot.jpg)
 
-## 安装方式
+## Features
+
+- **One-click table copy**: Hover any Markdown table to copy clean GitHub Flavored Markdown (`Copy MD` / `复制 MD`) or tab-separated values (`Copy TSV` / `复制表格`) ready for Excel, Google Sheets, WPS, or Feishu/Lark.
+- **Draggable & resizable floating table viewer**: Click `Pop out` (`弹窗查看`) or `Transpose` (`转置查看`) to inspect wide tables in a non-modal floating window without blocking chat scrolling. Drag the header to reposition, drag the bottom-right corner to resize, sort or resize columns inside the window, and flip between original and transposed orientations anytime.
+- **Smart height cap & sticky headers**:
+  - Prevents narrow, stretched-out columns by keeping table headers `nowrap` by default.
+  - Caps tall multi-row tables at `min(62vh, 520px)` with smooth internal scrolling, theme-aware sticky headers, and a one-click `Full height` / `Cap height` toggle.
+- **Unit-aware 3-state column sorting**: Click any column header to cycle `Ascending ▲ -> Descending ▼ -> Original order`. Automatically converts and compares matching units (`ms`/`s`, `Mbps`/`Gbps`, `KB`/`MB`/`GB`, numeric ranges, and percentages) while keeping empty placeholders (`-`, `N/A`, `无`) at the bottom.
+- **Manual column resize & wide mode**: Drag any header's right edge to resize individual columns (double-click the edge or click `Reset widths` to restore), or toggle `Expand width` for horizontal scrolling.
+- **Quick cell copy**: Double-click any data cell or `Alt + Click` any cell to copy its plain text.
+- **Built-in English & Simplified Chinese UI**: Automatically follows your Paseo app language (`en` and `zh-CN`) in real time.
+- **Long user bubble overflow fix**: Constrains wide pasted text and URLs inside user message bubbles across both native Paseo rows and Better Paseo plugin rows.
+
+## Installation
 
 ```bash
-# 从 GitHub 直接安装到任意 Paseo 主机（macOS / Windows / Linux）
+# Once listed on plugins.paseo.sh
+paseo plugin add chaojiman/paseo-native-table-tools
+
+# Or install directly from GitHub on macOS, Windows, or Linux
 paseo plugin add git:chaojiman/paseo-native-table-tools
 ```
 
-## 本地开发与调试
+## Local Development
 
 ```bash
 npm install
 npm run typecheck
 npm test
 
-# 从本地目录安装并热重载
 paseo plugin install /absolute/path/to/paseo-native-table-tools
 paseo plugin reload paseo-native-table-tools
 ```
+
+## License
+
+MIT

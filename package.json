@@ -1,7 +1,7 @@
 {
   "name": "paseo-native-table-tools",
   "version": "0.1.0",
-  "description": "Copy, sort, resize, and inspect Markdown tables in Paseo without replacing native replies",
+  "description": "Copy, sort, resize, and pop out Markdown tables in floating or transposed views without replacing native replies",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -12,9 +12,12 @@
     "paseo-plugin.json",
     "OVERVIEW.md",
     "OVERVIEW.*.md",
+    "README.md",
+    "README.*.md",
     "LICENSE",
     "index.client.tsx",
-    "client/"
+    "client/",
+    "assets/"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
