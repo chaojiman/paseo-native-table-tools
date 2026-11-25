@@ -1,0 +1,15 @@
+{
+  "id": "paseo-native-table-tools",
+  "name": "Native table tools",
+  "description": "Copy, sort, resize, and inspect Markdown tables without replacing native replies",
+  "translations": {
+    "zh-CN": {
+      "name": "原生表格增强",
+      "description": "在不接管原生回复的前提下提供表格一键复制、表头排序、拖拽调宽与独立悬浮窗查看"
+    }
+  },
+  "media": [],
+  "requirements": {
+    "paseo": ">=0.17.4"
+  }
+}

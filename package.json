@@ -1,0 +1,30 @@
+{
+  "name": "paseo-native-table-tools",
+  "version": "0.1.0",
+  "description": "Copy, sort, resize, and inspect Markdown tables in Paseo without replacing native replies",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chaojiman/paseo-native-table-tools.git"
+  },
+  "files": [
+    "paseo-plugin.json",
+    "OVERVIEW.md",
+    "OVERVIEW.*.md",
+    "LICENSE",
+    "index.client.tsx",
+    "client/"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/table-logic.test.ts"
+  },
+  "devDependencies": {
+    "@getpaseo/plugin": "0.17.4",
+    "@types/react": "~19.2.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "typescript": "^5.9.3"
+  }
+}
