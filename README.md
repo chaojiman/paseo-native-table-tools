@@ -22,10 +22,10 @@ Zero-intrusion enhancements for native Markdown tables in [Paseo](https://paseo.
 ## Installation
 
 ```bash
-# Once listed on plugins.paseo.sh
-paseo plugin add chaojiman/paseo-native-table-tools
+# Install from the official Paseo plugin registry (paseo.sh/plugins)
+paseo plugin add chaojiman/native-table-tools
 
-# Or install directly from GitHub on macOS, Windows, or Linux
+# Or install the latest main branch directly from GitHub
 paseo plugin add git:chaojiman/paseo-native-table-tools
 ```
 

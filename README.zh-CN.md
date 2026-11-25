@@ -22,10 +22,10 @@
 ## 安装方式
 
 ```bash
-# 官方插件市场上架后安装
-paseo plugin add chaojiman/paseo-native-table-tools
+# 从 Paseo 官方插件市场直接安装（paseo.sh/plugins）
+paseo plugin add chaojiman/native-table-tools
 
-# 或直接从 GitHub 安装到任意 Paseo 主机（macOS / Windows / Linux）
+# 或直接从 GitHub 安装最新 main 分支（macOS / Windows / Linux）
 paseo plugin add git:chaojiman/paseo-native-table-tools
 ```
 
